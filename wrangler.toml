@@ -1,0 +1,8 @@
+name = "veritasnexus"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "veritasnexus-db"
+database_id = "0523b082-2ef8-49ee-900e-f5f79365bd46"
