@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Clock, ArrowRight } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { getTimeline, getArticles } from "@/lib/api";
 
 export function TimelineDetail() {
