@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Zap, X } from 'lucide-react';
 
 export function MobileHeader() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,41 +17,39 @@ export function MobileHeader() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 px-4 flex items-center justify-between shadow-sm lg:hidden">
-      {/* Brand */}
-      <Link to="/" className="flex-shrink-0">
-        <span className="brand-mark text-base">Veritas Nexus</span>
-      </Link>
+    <header className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-100 z-50 px-4 flex items-center gap-3 lg:hidden" style={{boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+      {!isExpanded && (
+        <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-green flex items-center justify-center">
+            <Zap className="w-3.5 h-3.5 text-white" />
+          </div>
+          <span className="font-display font-bold text-sm text-green-dark">Veritas Nexus</span>
+        </Link>
+      )}
 
-      {/* Search */}
-      <form 
-        onSubmit={handleSearch} 
-        className={`flex items-center transition-all duration-300 ${
-          isExpanded ? 'flex-1 ml-4' : 'w-auto'
-        }`}
-      >
+      <form onSubmit={handleSearch} className={`flex items-center transition-all duration-200 ${isExpanded ? 'flex-1' : 'ml-auto'}`}>
         <div className={`relative flex items-center ${isExpanded ? 'w-full' : 'w-auto'}`}>
-          <Search className={`absolute left-3 w-4 h-4 text-gray-400 ${isExpanded ? '' : 'hidden'}`} />
-          <input
-            type="text"
-            placeholder={isExpanded ? 'Search...' : ''}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setIsExpanded(true)}
-            onBlur={() => {
-              if (!searchQuery) setIsExpanded(false);
-            }}
-            className={`py-2 text-sm bg-gray-50 border border-gray-200 font-ui focus:outline-none focus:ring-2 focus:ring-green-accent focus:border-transparent transition-all duration-300 ${
-              isExpanded 
-                ? 'w-full pl-9 pr-3 rounded-pill' 
-                : 'w-10 pl-0 text-center rounded-full cursor-pointer'
-            }`}
-          />
-          {!isExpanded && (
-            <Search 
-              className="absolute left-1/2 -translate-x-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-              onClick={() => setIsExpanded(true)}
-            />
+          {isExpanded ? (
+            <>
+              <Search className="absolute left-3 w-4 h-4 text-gray-400" />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search articles, topics..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-10 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl font-ui focus:outline-none focus:ring-2 focus:ring-green/30 focus:border-green/50"
+              />
+              <button type="button" onClick={() => { setIsExpanded(false); setSearchQuery(''); }}
+                className="absolute right-3 text-gray-400 hover:text-gray-600">
+                <X className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <button type="button" onClick={() => setIsExpanded(true)}
+              className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors">
+              <Search className="w-4 h-4" />
+            </button>
           )}
         </div>
       </form>
