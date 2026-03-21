@@ -19,45 +19,28 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          {/* Home */}
           <Route index element={<Home />} />
-          
-          {/* Section Pages */}
           <Route path="national" element={<Section />} />
           <Route path="economy" element={<Section />} />
           <Route path="agriculture" element={<Section />} />
           <Route path="environment" element={<Section />} />
           <Route path="global-affairs" element={<Section />} />
-          
-          {/* Article Pages */}
+          <Route path="global" element={<Section />} />
           <Route path="national/:slug" element={<Article />} />
           <Route path="economy/:slug" element={<Article />} />
           <Route path="agriculture/:slug" element={<Article />} />
           <Route path="environment/:slug" element={<Article />} />
           <Route path="global-affairs/:slug" element={<Article />} />
-          
-          {/* Policy Tracker */}
+          <Route path="global/:slug" element={<Article />} />
           <Route path="policy-tracker" element={<PolicyTracker />} />
           <Route path="policy-tracker/:slug" element={<PolicyDetail />} />
-          
-          {/* Timelines */}
           <Route path="timelines" element={<Timelines />} />
           <Route path="timelines/:slug" element={<TimelineDetail />} />
-          
-          {/* Topics */}
           <Route path="topics" element={<Topics />} />
           <Route path="topics/:slug" element={<TopicDetail />} />
-          
-          {/* Documents */}
           <Route path="documents" element={<Documents />} />
-          
-          {/* Dashboard */}
           <Route path="dashboard" element={<Dashboard />} />
-          
-          {/* Search */}
           <Route path="search" element={<Search />} />
-          
-          {/* Tag */}
           <Route path="tag/:slug" element={<Tag />} />
         </Route>
       </Routes>
