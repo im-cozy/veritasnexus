@@ -1,10 +1,10 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Target, BookOpen, Lightbulb, Users, ArrowRight } from 'lucide-react';
-import { articles, timelineTopics, topicPages } from '@/data/seed';
-import type { Section } from '@/types';
+import { ArrowLeft, Target, BookOpen, Lightbulb, Users, ArrowRight, Clock } from 'lucide-react';
+import { getArticle, getTimeline } from '@/lib/api';
 
-function getSectionColor(section: Section): string {
-  const colors: Record<Section, string> = {
+function getSectionColor(section: string): string {
+  const colors: Record<string, string> = {
     National: 'bg-blue-50 text-blue-700 border-blue-200',
     Economy: 'bg-amber-50 text-amber-700 border-amber-200',
     Agriculture: 'bg-green-50 text-green-700 border-green-200',
@@ -16,293 +16,187 @@ function getSectionColor(section: Section): string {
 
 export function Article() {
   const { section, slug } = useParams<{ section: string; slug: string }>();
-  
-  const article = articles.find(a => a.slug === slug);
-  
-  if (!article) {
-    return (
-      <div className="text-center py-16">
-        <h1 className="text-2xl font-display font-bold text-green-dark mb-4">Article Not Found</h1>
-        <p className="text-gray-600 mb-6">The article you're looking for doesn't exist.</p>
-        <Link 
-          to="/" 
-          className="inline-flex items-center gap-2 text-green hover:text-green-dark font-ui"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Return to Home
-        </Link>
-      </div>
-    );
-  }
+  const [article, setArticle] = useState<any>(null);
+  const [timeline, setTimeline] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const timelineTopic = article.timelineTopicId ? 
-    timelineTopics.find(t => t.id === article.timelineTopicId) : null;
+  useEffect(() => {
+    if (!slug) return;
+    getArticle(slug)
+      .then(async (a) => {
+        setArticle(a);
+        if (a.timelineTopicId) {
+          try {
+            const t = await getTimeline(a.timelineTopicId);
+            setTimeline(t);
+          } catch {}
+        }
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [slug]);
 
-  const topicPage = article.topicPageId ? 
-    topicPages.find(t => t.id === article.topicPageId) : null;
+  if (loading) return (
+    <div className="flex items-center justify-center py-20">
+      <div className="w-8 h-8 border-2 border-green border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
-  const relatedArticles = articles
-    .filter(a => a.id !== article.id && 
-      (a.primarySection === article.primarySection || 
-       a.tags.some(tag => article.tags.includes(tag)))
-    )
-    .slice(0, 3);
+  if (notFound || !article) return (
+    <div className="text-center py-16">
+      <h1 className="text-2xl font-display font-bold text-green-dark mb-4">Article Not Found</h1>
+      <p className="text-gray-600 mb-6">The article you're looking for doesn't exist.</p>
+      <Link to="/" className="inline-flex items-center gap-2 text-green hover:text-green-dark font-ui">
+        <ArrowLeft className="w-4 h-4" />Return to Home
+      </Link>
+    </div>
+  );
+
+  const sources = Array.isArray(article.sources) ? article.sources : JSON.parse(article.sources || '[]');
+  const whatItMeans = Array.isArray(article.whatItMeans) ? article.whatItMeans : JSON.parse(article.whatItMeans || '[]');
+  const knowledgeBox = article.knowledgeBox ? (typeof article.knowledgeBox === 'string' ? JSON.parse(article.knowledgeBox) : article.knowledgeBox) : null;
+  const intelligenceBrief = article.intelligenceBrief ? (typeof article.intelligenceBrief === 'string' ? JSON.parse(article.intelligenceBrief) : article.intelligenceBrief) : null;
+  const timelineEntries = timeline ? (Array.isArray(timeline.entries) ? timeline.entries : JSON.parse(timeline.entries || '[]')) : [];
 
   return (
-    <article className="space-y-8">
-      {/* Back Link */}
-      <Link 
-        to={`/${section}`}
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-green transition-colors font-ui"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to {article.primarySection}
+    <article className="space-y-8 max-w-3xl">
+      <Link to={`/${section}`} className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-green transition-colors font-ui">
+        <ArrowLeft className="w-4 h-4" />Back to {article.primarySection}
       </Link>
 
-      {/* Header */}
       <header className="space-y-4">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-xs font-medium px-2 py-0.5 rounded border font-ui ${getSectionColor(article.primarySection)}`}>
             {article.primarySection}
           </span>
           {article.articleType === 'IntelligenceBrief' && (
-            <span className="brief-badge">
-              <Target className="w-3 h-3" />
-              Intelligence Brief
-            </span>
+            <span className="brief-badge"><Target className="w-3 h-3" />Intelligence Brief</span>
           )}
         </div>
-        
         <h1 className="article-title">{article.title}</h1>
-        
         <div className="flex items-center gap-4 text-sm text-gray-500 font-ui flex-wrap">
-          <span className="font-medium text-gray-700">{article.author.name}</span>
+          <span className="font-medium text-gray-700">{article.authorId}</span>
           <span>•</span>
-          <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { 
-            month: 'long', 
-            day: 'numeric', 
-            year: 'numeric' 
-          })}</span>
+          <span>{new Date(article.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
           <span>•</span>
           <span>{article.readTime} min read</span>
         </div>
-
-        {/* Tags */}
-        {article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {article.tags.map(tag => (
-              <Link
-                key={tag}
-                to={`/tag/${tag}`}
-                className="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-full hover:bg-green-light hover:text-green-dark transition-colors font-ui"
-              >
-                {tag}
-              </Link>
-            ))}
-          </div>
-        )}
       </header>
 
-      {/* Context Bar */}
-      {timelineTopic && (
-        <div className="bg-green-light rounded-lg p-4 flex items-start gap-3">
-          <BookOpen className="w-5 h-5 text-green flex-shrink-0 mt-0.5" />
+      {article.articleType === 'IntelligenceBrief' && intelligenceBrief && (
+        <div className="bg-green-dark text-white rounded-lg p-6 space-y-4">
+          <div className="flex items-center gap-2"><Target className="w-4 h-4" /><span className="text-sm font-ui font-semibold uppercase tracking-wide">Intelligence Brief</span></div>
           <div>
-            <p className="text-sm font-medium text-green-dark font-ui">{timelineTopic.name}</p>
-            <p className="text-sm text-gray-600 mt-1">{timelineTopic.description}</p>
-            <Link 
-              to={`/timelines/${timelineTopic.slug}`}
-              className="inline-flex items-center gap-1 text-sm text-green hover:text-green-dark mt-2 font-ui"
-            >
-              View full timeline <ArrowRight className="w-3 h-3" />
-            </Link>
+            <div className="text-xs font-ui font-semibold text-green-mid uppercase tracking-wide mb-1">Summary</div>
+            <p className="text-sm leading-relaxed">{intelligenceBrief.summary}</p>
           </div>
-        </div>
-      )}
-
-      {/* Article Body */}
-      <div className="article-body">
-        <p className="drop-cap text-lg leading-relaxed">{article.excerpt}</p>
-        
-        {article.content.split('\n\n').map((paragraph, index) => (
-          <p key={index} className="mt-4">{paragraph}</p>
-        ))}
-      </div>
-
-      {/* Intelligence Brief Template (if applicable) */}
-      {article.articleType === 'IntelligenceBrief' && article.intelligenceBrief && (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <div className="bg-green px-4 py-3">
-            <h2 className="text-white font-display font-semibold flex items-center gap-2">
-              <Target className="w-5 h-5" />
-              Intelligence Brief
-            </h2>
-          </div>
-          
-          <div className="p-5 space-y-6">
-            {/* Summary */}
+          {intelligenceBrief.whatHappened && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 font-ui">
-                Summary
-              </h3>
-              <p className="text-gray-700">{article.intelligenceBrief.summary}</p>
+              <div className="text-xs font-ui font-semibold text-green-mid uppercase tracking-wide mb-1">What Happened</div>
+              <p className="text-sm leading-relaxed">{intelligenceBrief.whatHappened}</p>
             </div>
-            
-            {/* What Happened */}
+          )}
+          {intelligenceBrief.whyItMatters && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 font-ui">
-                What Happened
-              </h3>
-              <p className="text-gray-700">{article.intelligenceBrief.whatHappened}</p>
+              <div className="text-xs font-ui font-semibold text-green-mid uppercase tracking-wide mb-1">Why It Matters</div>
+              <p className="text-sm leading-relaxed">{intelligenceBrief.whyItMatters}</p>
             </div>
-            
-            {/* Why It Matters */}
+          )}
+          {intelligenceBrief.possibleOutcomes?.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 font-ui">
-                Why It Matters
-              </h3>
-              <p className="text-gray-700">{article.intelligenceBrief.whyItMatters}</p>
-            </div>
-            
-            {/* Historical Context */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 font-ui">
-                Historical Context
-              </h3>
-              <p className="text-gray-700">{article.intelligenceBrief.historicalContext}</p>
-            </div>
-            
-            {/* Possible Outcomes */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2 font-ui">
-                Possible Outcomes
-              </h3>
-              <ul className="space-y-2">
-                {article.intelligenceBrief.possibleOutcomes.map((outcome, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-green-light text-green text-xs flex items-center justify-center flex-shrink-0 mt-0.5 font-ui">
-                      {index + 1}
-                    </span>
-                    <span className="text-gray-700">{outcome}</span>
-                  </li>
+              <div className="text-xs font-ui font-semibold text-green-mid uppercase tracking-wide mb-2">Possible Outcomes</div>
+              <ul className="space-y-1">
+                {intelligenceBrief.possibleOutcomes.map((o: string, i: number) => (
+                  <li key={i} className="text-sm flex gap-2"><span className="text-green-mid">→</span>{o}</li>
                 ))}
               </ul>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      {/* Knowledge Box */}
-      {article.knowledgeBox && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Lightbulb className="w-5 h-5 text-amber-600" />
-            <h3 className="font-display font-semibold text-amber-800">
-              {article.knowledgeBox.title}
-            </h3>
-          </div>
-          <div className="space-y-4">
-            {article.knowledgeBox.entries.map((entry, index) => (
-              <div key={index}>
-                <p className="font-medium text-amber-800 text-sm font-ui">{entry.question}</p>
-                <p className="text-amber-700 mt-1">{entry.answer}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="prose prose-lg max-w-none">
+        <p className="text-lg leading-relaxed text-gray-800 font-serif">{article.content}</p>
+      </div>
 
-      {/* Verified Sources */}
-      {article.sources.length > 0 && (
+      {sources.length > 0 && (
         <div className="border-t border-gray-200 pt-6">
-          <div className="flex items-center gap-2 mb-4">
-            <BookOpen className="w-5 h-5 text-green" />
-            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider font-ui">
-              Verified Sources
-            </h3>
+          <div className="flex items-center gap-2 mb-3">
+            <BookOpen className="w-4 h-4 text-green" />
+            <h3 className="text-sm font-ui font-semibold text-gray-700 uppercase tracking-wide">Verified Sources</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            {article.sources.map((source, index) => (
-              <a
-                key={index}
-                href={source.url}
-                className="inline-flex items-center px-3 py-1.5 bg-green-light text-green-dark text-sm rounded-lg hover:bg-green-mid transition-colors font-ui"
-              >
-                {source.label}
+            {sources.map((s: any, i: number) => (
+              <a key={i} href={s.url || '#'} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full text-xs font-ui text-gray-600 hover:border-green hover:text-green transition-colors">
+                {s.label}
               </a>
             ))}
           </div>
         </div>
       )}
 
-      {/* What It Means (Mobile/Tablet - inline) */}
-      <div className="lg:hidden border-t border-gray-200 pt-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="w-5 h-5 text-green" />
-          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider font-ui">
-            What It Means
-          </h3>
-        </div>
-        <div className="space-y-4">
-          {article.whatItMeans.map((item, index) => (
-            <div key={index} className="bg-gray-50 rounded-lg p-4">
-              <p className="font-medium text-green-dark text-sm font-ui">{item.stakeholder}</p>
-              <p className="text-gray-600 mt-1 text-sm">{item.effect}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Topic Hub Card */}
-      {topicPage && (
+      {whatItMeans.length > 0 && (
         <div className="border-t border-gray-200 pt-6">
-          <div className="bg-gradient-to-br from-green-light to-white border border-green-mid rounded-lg p-5">
-            <p className="text-xs font-semibold text-green uppercase tracking-wider mb-2 font-ui">
-              Explore This Topic
-            </p>
-            <h3 className="font-display font-semibold text-xl text-green-dark">
-              {topicPage.name}
-            </h3>
-            <p className="text-gray-600 mt-2 text-sm">{topicPage.overview}</p>
-            <Link 
-              to={`/topics/${topicPage.slug}`}
-              className="inline-flex items-center gap-2 mt-4 text-green hover:text-green-dark font-ui text-sm"
-            >
-              View Topic Hub <ArrowRight className="w-4 h-4" />
-            </Link>
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb className="w-4 h-4 text-green" />
+            <h3 className="text-sm font-ui font-semibold text-gray-700 uppercase tracking-wide">What It Means</h3>
+          </div>
+          <div className="space-y-3">
+            {whatItMeans.map((item: any, i: number) => (
+              <div key={i} className="flex gap-3 p-3 bg-green-light rounded-lg">
+                <div className="w-1 bg-green rounded-full flex-shrink-0" />
+                <div>
+                  <div className="text-xs font-ui font-semibold text-green uppercase tracking-wide mb-1">{item.stakeholder}</div>
+                  <p className="text-sm text-gray-700">{item.effect}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Related Articles */}
-      {relatedArticles.length > 0 && (
+      {timeline && timelineEntries.length > 0 && (
         <div className="border-t border-gray-200 pt-6">
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 font-ui">
-            Related Articles
-          </h3>
-          <div className="space-y-4">
-            {relatedArticles.map(related => (
-              <Link 
-                key={related.id}
-                to={`/${related.primarySection.toLowerCase()}/${related.slug}`}
-                className="block p-4 bg-gray-50 rounded-lg hover:bg-green-light transition-colors"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded font-ui ${getSectionColor(related.primarySection)}`}>
-                    {related.primarySection}
-                  </span>
-                  {related.articleType === 'IntelligenceBrief' && (
-                    <span className="text-xs text-green font-ui">Brief</span>
-                  )}
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4 text-green" />
+            <h3 className="text-sm font-ui font-semibold text-gray-700 uppercase tracking-wide">Story Timeline — {timeline.name}</h3>
+          </div>
+          <div className="space-y-3">
+            {timelineEntries.map((entry: any, i: number) => (
+              <div key={i} className={`flex gap-3 ${entry.isCurrent ? 'opacity-100' : 'opacity-70'}`}>
+                <div className="flex flex-col items-center">
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0 mt-1 ${entry.isCurrent ? 'bg-green' : 'bg-gray-300'}`} />
+                  {i < timelineEntries.length - 1 && <div className="w-0.5 bg-gray-200 flex-1 my-1" />}
                 </div>
-                <p className="font-medium text-gray-900">{related.title}</p>
-                <p className="text-sm text-gray-500 mt-1 font-ui">
-                  {new Date(related.publishedAt).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric' 
-                  })} • {related.readTime} min read
-                </p>
-              </Link>
+                <div className="pb-3">
+                  <div className="text-xs font-ui font-semibold text-gray-500">{entry.year}</div>
+                  <div className={`text-sm font-medium ${entry.isCurrent ? 'text-green-dark' : 'text-gray-700'}`}>{entry.heading}</div>
+                  <p className="text-xs text-gray-500 mt-0.5">{entry.summary}</p>
+                  {entry.isCurrent && <span className="text-xs font-ui font-semibold text-green">← Current article</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          <Link to={`/timelines/${timeline.slug}`} className="inline-flex items-center gap-1 text-sm text-green hover:text-green-dark font-ui mt-3">
+            View full timeline <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      )}
+
+      {knowledgeBox && (
+        <div className="border-t border-gray-200 pt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="w-4 h-4 text-green" />
+            <h3 className="text-sm font-ui font-semibold text-gray-700 uppercase tracking-wide">{knowledgeBox.title}</h3>
+          </div>
+          <div className="space-y-3">
+            {knowledgeBox.entries?.map((e: any, i: number) => (
+              <div key={i} className="p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm font-medium text-gray-800 mb-1">{e.question}</div>
+                <p className="text-sm text-gray-600">{e.answer}</p>
+              </div>
             ))}
           </div>
         </div>
