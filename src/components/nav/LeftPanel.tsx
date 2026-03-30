@@ -1,16 +1,15 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Search, Home, Building2, TrendingUp, Wheat, TreePine, Globe, ClipboardList, Clock, FolderOpen, FileText, LayoutDashboard, Zap } from 'lucide-react';
 import { useState } from 'react';
+import { Search, Home, Building2, TrendingUp, Wheat, TreePine, Globe, ClipboardList, Clock, FolderOpen, FileText, LayoutDashboard, Shield } from 'lucide-react';
 
 const sectionLinks = [
-  { label: 'Home',         path: '/',             icon: Home },
-  { label: 'National',     path: '/national',     icon: Building2 },
-  { label: 'Economy',      path: '/economy',      icon: TrendingUp },
-  { label: 'Agriculture',  path: '/agriculture',  icon: Wheat },
-  { label: 'Environment',  path: '/environment',  icon: TreePine },
-  { label: 'Global Affairs',path: '/global-affairs', icon: Globe },
+  { label: 'Home',          path: '/',             icon: Home },
+  { label: 'National',      path: '/national',     icon: Building2 },
+  { label: 'Economy',       path: '/economy',      icon: TrendingUp },
+  { label: 'Agriculture',   path: '/agriculture',  icon: Wheat },
+  { label: 'Environment',   path: '/environment',  icon: TreePine },
+  { label: 'Global Affairs',path: '/global-affairs',icon: Globe },
 ];
-
 const platformLinks = [
   { label: 'Policy Tracker', path: '/policy-tracker', icon: ClipboardList },
   { label: 'Timelines',      path: '/timelines',      icon: Clock },
@@ -22,100 +21,60 @@ const platformLinks = [
 export function LeftPanel() {
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
   };
-
+  const NavItem = ({ link }: { link: typeof sectionLinks[0] }) => {
+    const Icon = link.icon;
+    const isActive = location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
+    return (
+      <NavLink to={link.path}
+        className={['flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-ui transition-all duration-150 mb-0.5 group relative', isActive ? 'nav-active' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'].join(' ')}>
+        {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ background: 'var(--green)' }} />}
+        <span className={['w-7 h-7 flex items-center justify-center rounded-md flex-shrink-0 transition-colors', isActive ? 'text-green' : 'text-gray-400 group-hover:text-gray-600'].join(' ')} style={isActive ? { background: 'var(--green-mid)' } : {}}>
+          <Icon className="w-4 h-4" />
+        </span>
+        <span className="font-medium">{link.label}</span>
+        {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--green)' }} />}
+      </NavLink>
+    );
+  };
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[240px] bg-white border-r border-gray-100 flex flex-col z-40" style={{boxShadow:'2px 0 12px rgba(0,0,0,0.04)'}}>
-
-      {/* Brand */}
-      <div className="px-6 py-5 border-b border-gray-100">
+    <aside className="fixed left-0 top-0 h-screen w-[240px] bg-white flex flex-col z-40" style={{ boxShadow: 'var(--shadow-panel)', borderRight: '1px solid var(--border)' }}>
+      <div className="px-5 py-5" style={{ borderBottom: '1px solid var(--border)' }}>
         <NavLink to="/" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-green flex items-center justify-center flex-shrink-0">
-            <Zap className="w-4 h-4 text-white" />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, var(--green-dark) 0%, var(--green-accent) 100%)', boxShadow: '0 2px 8px rgba(26,107,60,0.30)' }}>
+            <Shield className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-display font-bold text-sm text-green-dark leading-tight tracking-wide">Veritas Nexus</p>
-            <p className="text-xs text-gray-400 font-ui italic leading-tight">Where Truth Connects</p>
+            <p className="brand-mark text-[15px] leading-tight">Veritas Nexus</p>
+            <p className="brand-tagline text-[11px] leading-tight mt-0.5">Where Truth Connects</p>
           </div>
         </NavLink>
       </div>
-
-      {/* Search */}
-      <div className="px-4 py-3 border-b border-gray-100">
+      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
         <form onSubmit={handleSearch} className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search articles..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-lg font-ui focus:outline-none focus:ring-2 focus:ring-green/30 focus:border-green/50 transition-all placeholder:text-gray-400"
-          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--text-light)' }} />
+          <input type="text" placeholder="Search articles..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="vn-search" />
         </form>
       </div>
-
-      {/* Nav */}
-      <div className="flex-1 overflow-y-auto py-3 custom-scrollbar">
-        <div className="px-3 mb-1">
-          <p className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5 font-ui">Sections</p>
-          {sectionLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = location.pathname === link.path ||
-              (link.path !== '/' && location.pathname.startsWith(link.path));
-            return (
-              <NavLink key={link.path} to={link.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-ui transition-all mb-0.5 ${
-                  isActive
-                    ? 'bg-green-light text-green-dark font-semibold'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
-                }`}>
-                <div className={`w-5 h-5 flex items-center justify-center rounded ${isActive ? 'text-green' : 'text-gray-400'}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                {link.label}
-                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-green" />}
-              </NavLink>
-            );
-          })}
+      <div className="flex-1 overflow-y-auto custom-scrollbar py-3">
+        <div className="px-3 mb-2">
+          <p className="px-3 mb-2 font-ui" style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-light)' }}>Sections</p>
+          {sectionLinks.map(link => <NavItem key={link.path} link={link} />)}
         </div>
-
-        <div className="px-3 mt-3 pt-3 border-t border-gray-100">
-          <p className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5 font-ui">Platform</p>
-          {platformLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = location.pathname.startsWith(link.path);
-            return (
-              <NavLink key={link.path} to={link.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-ui transition-all mb-0.5 ${
-                  isActive
-                    ? 'bg-green-light text-green-dark font-semibold'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
-                }`}>
-                <div className={`w-5 h-5 flex items-center justify-center rounded ${isActive ? 'text-green' : 'text-gray-400'}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                {link.label}
-                {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-green" />}
-              </NavLink>
-            );
-          })}
+        <div className="px-3 pt-3 mt-1" style={{ borderTop: '1px solid var(--border)' }}>
+          <p className="px-3 mb-2 font-ui" style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-light)' }}>Platform</p>
+          {platformLinks.map(link => <NavItem key={link.path} link={link} />)}
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="px-6 py-4 border-t border-gray-100">
+      <div className="px-5 py-4" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2 mb-1">
-          <div className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green" />
-          </div>
-          <span className="text-xs text-gray-500 font-ui">Platform Active</span>
+          <span className="live-dot" />
+          <span className="font-ui text-xs" style={{ color: 'var(--text-muted)' }}>Platform Active</span>
         </div>
-        <p className="text-xs text-gray-300 font-ui">© 2025 Veritas Nexus</p>
+        <p className="font-ui" style={{ fontSize: '11px', color: 'var(--text-light)' }}>© 2025 Veritas Nexus</p>
       </div>
     </aside>
   );
